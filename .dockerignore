@@ -1,0 +1,22 @@
+# Keep the build context small and the image free of host state. The Dockerfile
+# only reads js/ (its manifests and the engine/gateway sources); everything else
+# is run-time mounts, so it must not be shipped to the daemon.
+.git
+.gitignore
+.gitattributes
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/*.tsbuildinfo
+**/__pycache__
+**/.venv
+**/db
+**/database/data
+services/monitoring/data
+reports
+runtime-logs
+_parity_js
+_parity_py
+writeups
+**/*.log
