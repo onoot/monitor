@@ -1,0 +1,156 @@
+# The monitoring stand, in one command.
+#
+# This is the only file the operator has to start. It brings up two things:
+#
+#   monitoring  the gateway and its dashboard; the operator's whole surface.
+#   attacker    a container on attack-net (10.65.9.0/24) whose address is inside
+#               a team range, so the attack rules police it -- the negative test
+#               that the same traffic from the checker is let through.
+#
+# The checker is deliberately NOT part of this file. It is an external grader
+# carried in separately and attached to `checker-net` (10.78.0.0/24), so a
+# rebuild or restart of the monitoring stand never disturbs a running game. The
+# network stays declared below for exactly that attach.
+#
+# The watched services are NOT defined here and are not started at boot. The
+# dashboard scans the services folder, shows one card per project, and its launch
+# button runs each project's own compose file against the host Docker socket
+# mounted below. That keeps the service projects isolated and lets the operator
+# decide what is up, while this file stays the single entry point.
+#
+#   docker compose up -d --build          (from services/monitoring)
+#
+# Point the scan at another folder with AD_SERVICES_HOST_DIR (a host path). The
+# folder itself must be named `services` in the ordinary case; the compose files
+# inside it are what gets launched.
+
+name: ad-stand
+
+services:
+  monitoring:
+    build:
+      context: ../..
+      dockerfile: services/monitoring/Dockerfile
+    image: ad-monitoring:local
+    container_name: ad-monitoring
+    restart: unless-stopped
+    pids_limit: 256
+    mem_limit: 512M
+    cpus: 1
+    # The gateway has to stay up even when it is under load, and the operator's
+    # dashboard depends on it, so it gets a health check and a restart rather
+    # than being left to fail silently.
+    stop_grace_period: 10s
+    environment:
+      # Limits the cost of a flood. Overridable per environment.
+      AD_RATE_LIMIT: ${AD_RATE_LIMIT:-100}
+      AD_RATE_BURST: ${AD_RATE_BURST:-500}
+      # Where the capture files land: one folder per service, plus `checker`.
+      AD_DATA_DIR: /data
+      # Read-only root of the generated analysis reports (reports/<service>/).
+      # The dashboard's Reports tab lists and serves these; generation stays a
+      # deliberate host step (deploy/stand-reports.ps1).
+      AD_REPORTS_DIR: /reports
+      # Where the UI scans for compose/.env files and where the launch button
+      # runs `docker compose` from. Same path: what was scanned is what starts.
+      AD_DISCOVER_DIR: /services
+      AD_SERVICES_DIR: /services
+      # Folders in the scan root that are not team services; the gateway's own
+      # project must not be offered as a service to route to itself.
+      AD_DISCOVER_SKIP: ${AD_DISCOVER_SKIP:-monitoring}
+      # The name this process runs as, so it can attach itself to the networks a
+      # launched project creates and reach the service by its compose name.
+      AD_SELF_CONTAINER: ad-monitoring
+      # Sessions are JWTs signed with this secret. A fixed value means a rebuild
+      # or restart of the container does not log the operator out; the same
+      # secret across the stand is what makes the token stateless. Change it to
+      # invalidate every outstanding session at once.
+      AD_JWT_SECRET: ${AD_JWT_SECRET:-ad-stand-monitoring-jwt-please-change}
+    volumes:
+      # Read only, and a single file: the service cannot rewrite the allowlist it
+      # was given, so a compromise of the process does not silently widen it.
+      - ./config/gateway.json:/app/config/gateway.json:ro
+      # The watched services, read-only. The dashboard scans this folder; the
+      # launch button runs the compose files inside it against the socket.
+      - ${AD_SERVICES_HOST_DIR:-..}:/services:ro
+      # Writable capture: JSON Lines, data/<service>/<date>.jsonl on the host, so
+      # the operator can read the files without the container.
+      - ./data:/data
+      # The generated reports, read-only. Required for the Reports tab; the
+      # gateway only reads these files, it never writes them.
+      - ../../reports:/reports:ro
+      # The host Docker socket, so a service project can be started and stopped
+      # from the dashboard with its own compose file. This is root-equivalent
+      # access to the host; mount it only where the launch button is wanted.
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      # The operator reaches the stand from the host. The ingress is what a
+      # participant's browser would use; the analytics surface is separate so the
+      # two can be allowed to different addresses.
+      - "0.0.0.0:9090:9090"
+      - "0.0.0.0:8787:8787"
+    networks:
+      stand:
+        ipv4_address: 10.77.0.254
+      checker-net:
+        ipv4_address: 10.78.0.254
+      attack-net:
+        ipv4_address: 10.65.9.254
+    # No `depends_on`: the watched services are started by their own compose
+    # files, on the operator's command, and are not defined here.
+    healthcheck:
+      test: ["CMD", "node", "-e", "const r=require('node:http').get({host:'127.0.0.1',port:8787,path:'/api/health',timeout:4000},(s)=>process.exit(s.statusCode===200?0:1));r.on('error',()=>process.exit(1));r.on('timeout',()=>{r.destroy();process.exit(1)})"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  attacker:
+    image: curlimages/curl:8.11.1
+    container_name: ad-attacker
+    restart: unless-stopped
+    entrypoint: ["sh", "/attack.sh"]
+    environment:
+      ATTACK_TARGET: ${ATTACK_TARGET:-10.65.9.254}
+      ATTACK_PORTS: ${ATTACK_PORTS:-1337 8083 8080 4444}
+      ATTACK_INTERVAL: ${ATTACK_INTERVAL:-10}
+    volumes:
+      - ./attacker/attack.sh:/attack.sh:ro
+    networks:
+      attack-net:
+        ipv4_address: 10.65.9.2
+
+networks:
+  # The emulated game network, on a fixed subnet: the addresses in the config are
+  # the identity of the actors, and a checker at 10.78.0.250 has to be that
+  # address on every start.
+  stand:
+    name: ad-stand
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.77.0.0/24
+          # The host end, which is the operator. Not the monitoring container's
+          # own address: docker reserves the gateway and refuses to hand it out.
+          gateway: 10.77.0.1
+
+  # The grader network. The external checker attaches here as 10.78.0.250; .1 is
+  # the docker host end, which the config lists as the operator. Kept declared
+  # even though no service here uses it, so the checker has a network to join.
+  checker-net:
+    name: ad-checker-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.78.0.0/24
+          gateway: 10.78.0.1
+
+  # The attacker's network. Its range is a team range in gateway.json, so the
+  # attack rules apply to it and a blocked request is the expected result.
+  attack-net:
+    name: ad-attack-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.65.9.0/24
+          gateway: 10.65.9.1

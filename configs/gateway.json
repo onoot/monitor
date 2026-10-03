@@ -1,0 +1,92 @@
+{
+  "_comment": "Emulated game network for the local stand. Checker addresses bypass blocking; team and admin addresses are the allowlist. Addresses are chosen by the operator, never learned from a request.",
+  "_network_comment": "The 10.x ranges are placeholders for the real game network and are not yet reachable from this machine. The 127.x entries are what makes the stand usable on one host: 127.0.0.1 is the operator, 127.0.0.9 stands in for the checker, and 127.0.0.2 / 127.0.0.3 stand in for the two teams. Replace them with the real ranges when a grading client is pointed at the stand.",
+  "listen": {
+    "host": "0.0.0.0",
+    "port": 9090
+  },
+  "analytics_listen": {
+    "host": "0.0.0.0",
+    "port": 8787
+  },
+  "checker": [
+    {
+      "cidr": "10.77.0.9",
+      "note": "grading client: passes through, never blocked"
+    },
+    {
+      "cidr": "127.0.0.9/32",
+      "note": "local stand stand-in for the checker, until a real grading client is pointed at it"
+    }
+  ],
+  "admin": [
+    {
+      "cidr": "10.0.0.1",
+      "note": "operator workstation"
+    },
+    {
+      "cidr": "127.0.0.1/32",
+      "note": "this machine, where the operator runs the stand"
+    }
+  ],
+  "teams": [
+    {
+      "cidr": "10.0.0.0/8",
+      "team": "everyone"
+    },
+    {
+      "cidr": "127.0.0.2/32",
+      "team": "alpha"
+    },
+    {
+      "cidr": "127.0.0.3/32",
+      "team": "beta"
+    }
+  ],
+  "routes": {
+    "curs.local": {
+      "service": "curs",
+      "upstream": "127.0.0.1:8083"
+    },
+    "magiclib.local": {
+      "service": "magiclib",
+      "upstream": "127.0.0.1:1337"
+    },
+    "omnyhub.local": {
+      "service": "Omnyhub",
+      "upstream": "127.0.0.1:4444"
+    },
+    "omnyhub-web.local": {
+      "service": "Omnyhub",
+      "upstream": "127.0.0.1:3333"
+    },
+    "altaycoin-api.local": {
+      "service": "AltayCoin",
+      "upstream": "127.0.0.1:8080"
+    },
+    "altaycoin-web.local": {
+      "service": "AltayCoin",
+      "upstream": "127.0.0.1:3000"
+    }
+  },
+  "_routes_comment": "Host -> upstream allowlist. The upstream is never taken from the request, so a crafted Host or X-Forwarded-Host cannot make the gateway fetch an arbitrary address.",
+  "accounts": [
+    {
+      "login": "ops",
+      "password_hash": "0d3d6d4a022a561c5756d438758ea46e:b4484f03cd71bc329d972c3af4571763c6208926a78f5d4a147ebbc729e6f47e768ca5b5d47a72cdd8365243e32feac809ed1d05e8a01f71db46dd68a89eb385",
+      "role": "admin"
+    },
+    {
+      "login": "alpha",
+      "password_hash": "81cc5bb196ee48f7b6a6e0565988419a:038d3793d4aacb958e3017609cbef642b53c51fc4e184ffa1a2b5bf9987340b496b61b3c18b03613049dd6ecb6a344aba157fbd42e6e961259348abaff5cda73",
+      "role": "team",
+      "team": "alpha"
+    },
+    {
+      "login": "beta",
+      "password_hash": "58e7b3686426c9e9b738549b4d9db1c5:0ab3c439039ffd1a7b2139e25d7a3518a6ef9132b91a26e15982e09b8f710ac279e43daf5ac037b08047b25325134b191585600d22598ad1240e332722c330ba",
+      "role": "team",
+      "team": "beta"
+    }
+  ]
+}

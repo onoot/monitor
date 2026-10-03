@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "service": "Omnyhub",
+  "generated_utc": "2026-10-02T06:24:45+00:00",
+  "source_roots": [
+    "C:\\Users\\Home\\Desktop\\Новая папка\\services\\Omnyhub"
+  ],
+  "files_scanned": 33,
+  "files_skipped": 53,
+  "request_records": 0,
+  "rules_evaluated": "see ad.rules.RULES",
+  "notes": "Express + MongoDB. Local instance only; no checker source available."
+}

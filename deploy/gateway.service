@@ -1,0 +1,27 @@
+[Unit]
+Description=AD gateway: ingress (9090) + operator surface (8787)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=node
+Group=node
+WorkingDirectory=/opt/ad-gateway
+# The config mounts the addresses the organiser gave us; the data directory is
+# where data/<service>/*.jsonl and data/checker/*.jsonl accumulate.
+Environment=AD_GATEWAY_CONFIG=/opt/ad-gateway/config/gateway.json
+Environment=AD_DATA_DIR=/opt/ad-gateway/data
+Environment=AD_RATE_LIMIT=20
+Environment=AD_RATE_BURST=60
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=3
+# SIGTERM triggers a flush of the write queue, so a restart does not eat the
+# latest capture lines.
+TimeoutStopSec=15
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

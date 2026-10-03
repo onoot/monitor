@@ -1,0 +1,394 @@
+/* Общие стили для страниц постов */
+.loading-container,
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  font-size: 18px;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.error-container {
+  color: #ff6666;
+  flex-direction: column;
+}
+
+/* Стили для списка постов */
+.posts-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.posts-title {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
+  font-size: 36px;
+}
+
+.create-post-button-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.create-post-button {
+  background-color: #5cb85c;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  display: inline-block;
+}
+
+.create-post-button:hover {
+  background-color: #4cae4c;
+}
+
+.no-posts-message {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 30px;
+  margin: 30px auto;
+  max-width: 600px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.no-posts-message p {
+  margin: 10px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.post-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.post-image-container {
+  height: 200px;
+  overflow: hidden;
+}
+
+.post-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+.post-content {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-title {
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.post-text {
+  color: #666;
+  flex-grow: 1;
+  margin-bottom: 15px;
+}
+
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #888;
+}
+
+.read-more-button {
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 8px 15px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  align-self: flex-start;
+}
+
+.read-more-button:hover {
+  background-color: #0056b3;
+}
+
+.back-link-container {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.back-link {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: #aad4ff;
+}
+
+/* Стили для детальной страницы поста */
+.post-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.post-detail-title {
+  font-size: 30px;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.post-detail-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #777;
+}
+
+.post-detail-image-container {
+  margin-bottom: 25px;
+}
+
+.post-detail-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.post-detail-content {
+  font-size: 17px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.post-detail-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.edit-post-button,
+.delete-post-button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.edit-post-button {
+  background-color: #007bff;
+  color: white;
+  display: inline-block;
+}
+
+.edit-post-button:hover {
+  background-color: #0056b3;
+}
+
+.delete-post-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.delete-post-button:hover {
+  background-color: #bd2130;
+}
+
+.post-detail-navigation {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.back-to-posts-button {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  display: inline-block;
+}
+
+.back-to-posts-button:hover {
+  background-color: #5a6268;
+}
+
+/* Стили для форм создания и редактирования постов */
+.create-post-container,
+.edit-post-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.create-post-title,
+.edit-post-title {
+  font-size: 28px;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.create-post-form,
+.edit-post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-control {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: #f9f9f9;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #007bff;
+  background-color: #fff;
+}
+
+.form-control-file {
+  padding: 10px 0;
+}
+
+.image-preview-container,
+.current-image-container {
+  margin-top: 10px;
+}
+
+.image-preview-container p,
+.current-image-container p {
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.image-preview,
+.current-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.error-message {
+  color: #dc3545;
+  padding: 10px;
+  background-color: #f8d7da;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.submit-button,
+.cancel-button {
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  font-size: 16px;
+  flex: 1;
+  text-align: center;
+}
+
+.submit-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #218838;
+}
+
+.submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background-color: #dc3545;
+  color: white;
+  text-decoration: none;
+  display: block;
+}
+
+.cancel-button:hover {
+  background-color: #c82333;
+} 

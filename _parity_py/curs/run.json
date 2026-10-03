@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "service": "curs",
+  "generated_utc": "2026-10-02T06:24:44+00:00",
+  "source_roots": [
+    "C:\\Users\\Home\\Desktop\\Новая папка\\services\\curs"
+  ],
+  "files_scanned": 12,
+  "files_skipped": 190,
+  "request_records": 16,
+  "rules_evaluated": "see ad.rules.RULES",
+  "notes": "Go + Gin + MySQL. Local instance only; no checker source available."
+}

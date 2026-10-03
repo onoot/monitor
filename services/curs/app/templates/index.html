@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Главная</title>
+
+    <link href="/static/bootstrap.css" rel="stylesheet">
+    <link href="/static/3-col-portfolio.css" rel="stylesheet">
+    <style>
+        .navbar-nav li a b {
+            color: white;
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+        }
+        .user-list li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+          </button>
+        </div>
+
+      <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav">
+          <li class="active"><a href="/"><b>Главная</b></a></li>
+        {{if .user_id}}
+          <li><a href="/user/logout">Выйти</a></li>
+		  <li><a href="/dashboard">Посмотреть лотерейный билет</a></li>
+        {{else}}
+          <li><a href="/user/register">Регистрация</a></li>
+          <li><a href="/user/login">Авторизация</a></li>
+        {{end}}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+
+        <div class="row">
+            <div class="col-lg-12">
+            <h1 class="page-header">Лотерея "Курс" <small>Играй и выигрывай</small></h1>
+            </div>
+        </div>
+
+      {{if .ticket_number}}
+      <p><b>Ваш лотерейный билет:</b> {{.ticket_number}}</p>
+      <p>результаты в ближайшем будущем</p>
+      {{end}}
+
+    {{if and .user_id (eq .user_role "admin")}}
+        <h2>Список пользователей:</h2>
+	<p><b>Бережно храни эти данные,админ</b></p>
+        <ul class="user-list">
+            {{range .users}}
+            <li>
+                ID: {{.Id}}, Логин: {{.Login}}, Роль: {{.Role}}, Пароль: {{.Password}}, Билет: {{.TicketNumber}}
+            </li>
+            {{end}}
+        </ul>
+    {{end}}
+    </div>
+</body>
+</html>

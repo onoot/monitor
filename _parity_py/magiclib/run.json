@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "service": "magiclib",
+  "generated_utc": "2026-10-02T06:24:44+00:00",
+  "source_roots": [
+    "C:\\Users\\Home\\Desktop\\Новая папка\\services\\magiclib"
+  ],
+  "files_scanned": 17,
+  "files_skipped": 7,
+  "request_records": 0,
+  "rules_evaluated": "see ad.rules.RULES",
+  "notes": "Flask + PostgreSQL. Local instance only; no checker source available."
+}

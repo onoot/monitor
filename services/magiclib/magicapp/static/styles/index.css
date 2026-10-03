@@ -1,0 +1,62 @@
+.top-bar {
+    background-color: #FFB800;
+    min-height: 50px;
+    max-height: 50px;
+    width: 100%;
+    top: 0;
+    display: flex;
+    align-items: center;
+    text-align: left;
+}
+
+.top-bar a {
+    background-color: #FFCA40;
+    color: 	#A67800;
+    margin-left: 5px;
+    margin-right: 5px;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+.top-bar a:hover { 
+    box-shadow: 0 0 10px #FFAA00; 
+}
+
+h1 {
+    text-align: center;
+    color: #FFB800;
+}
+
+.user-container {
+    display: flex;
+    flex-wrap: wrap; /* Разрешаем перенос на новую строку */
+    justify-content: flex-start; /* Выравниваем по левому краю */
+}
+
+.user-box {
+    border: 1px solid #4f127e;
+    padding: 10px;
+    background-color: #572781;
+    margin: 10px;
+    min-width: 450px;
+    max-width: 450px;
+    box-sizing: border-box; /* Чтобы padding не увеличивал ширину */
+}
+.user-box:hover { 
+    box-shadow: 0 0 10px #4f127e; }
+#name {
+    color: #FFB800;
+    padding-bottom: 0px;
+}
+#pass {
+    color: #572781;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+#word {
+    color: #FFB800;
+    padding-top: 0px;
+}
+body {
+    background-color: #3E0470;
+}

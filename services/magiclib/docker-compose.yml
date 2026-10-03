@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 1024M
+    environment:
+      POSTGRES_USER: magicadmin
+      POSTGRES_PASSWORD: magicpassword
+      POSTGRES_DB: magiclib
+    ports:
+      - 127.0.0.1:5432:5432
+    networks:
+      - magicnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d magiclib -U magicadmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  magiclib:
+    build: .
+    command: gunicorn -w 6 --bind 0.0.0.0:1337 --log-level debug run:app
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 1024M
+    environment:
+      POSTGRES_CONNECT: postgres://magicadmin:magicpassword@postgres:5432/magiclib
+    ports:
+      - "0.0.0.0:1337:1337"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - magicnet
+
+
+  
+networks:
+  magicnet:
+    name: magicnet
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16

@@ -1,0 +1,54 @@
+{
+  "_comment": "Template for a real competition config. Fill the addresses the organiser gives you, set the account passwords in the environment variables named below, then run: node packages/gateway/dist/setup.js --template deploy/competition.example.json --out config/gateway.json. No password is written to this file.",
+  "listen": { "host": "0.0.0.0", "port": 9090 },
+  "analytics_listen": { "host": "0.0.0.0", "port": 8787 },
+
+  "checker": [
+    { "cidr": "10.0.0.9", "note": "the grader. One or many entries; this only labels traffic in data/checker and the 'Чекер' tab. An unlisted checker stays safe regardless, because only known team subnets are policed" }
+  ],
+  "admin": [
+    { "cidr": "10.0.0.1", "note": "the operator's machine" },
+    { "cidr": "127.0.0.1/32", "note": "the gateway's own health check" }
+  ],
+  "teams": [
+    { "cidr": "10.0.1.0/24", "team": "alpha" },
+    { "cidr": "10.0.2.0/24", "team": "beta" }
+  ],
+
+  "routes": {
+    "curs.local": { "service": "curs", "upstream": "127.0.0.1:8083" },
+    "magiclib.local": { "service": "magiclib", "upstream": "127.0.0.1:1337" },
+    "omnyhub.local": { "service": "Omnyhub", "upstream": "127.0.0.1:4444" },
+    "omnyhub-web.local": { "service": "Omnyhub", "upstream": "127.0.0.1:3333" },
+    "altaycoin-api.local": { "service": "AltayCoin", "upstream": "127.0.0.1:8080" },
+    "altaycoin-web.local": { "service": "AltayCoin", "upstream": "127.0.0.1:3000" }
+  },
+  "_ingress_ports": "Port-redirection mode for a real network: clients keep dialling the service's own address, netfilter REDIRECTs the public port onto public+redirect_offset where the gateway listens, and the gateway forwards back to the same port on 127.0.0.1. Nothing in service or client config changes. Run deploy/iptables-forward.sh apply after configuring.",
+  "redirect_offset": 10000,
+  "ingress_ports": {
+    "8083": "curs",
+    "1337": "magiclib",
+    "4444": { "service": "Omnyhub" },
+    "3333": { "service": "Omnyhub" },
+    "8080": { "service": "AltayCoin" },
+    "3000": { "service": "AltayCoin" }
+  },
+
+  "_protected_ports": "Ports to REFUSE at the gateway: a client dialling the database or a management panel gets a broken connection through the same redirect as everything else, so nothing answers on the public network. The port must not appear in ingress_ports. Set allow_protected_ports: true (or delete the list) to leave these ports to their own listener.",
+  "protected_ports": {
+    "5432": "postgresql",
+    "3306": "mysql/mariadb",
+    "27017": "mongodb",
+    "6379": "redis",
+    "11211": "memcached",
+    "9200": "elasticsearch"
+  },
+  "allow_protected_ports": false,
+
+  "_ui": "Monitoring has three things that can be managed from the dashboard without touching gateway.json: label an unlisted address as checker/admin/team (tab 'Адреса'), route an extra public port (tab 'Сервисы', with auto-detection from the services' compose/.env files), and scan a directory. Labels persist to <data>/state/labels.json, services to <data>/state/services.json, and both are applied live and at boot.",
+  "accounts": [
+    { "login": "ops", "role": "admin", "password_env": "AD_OPS" },
+    { "login": "alpha", "role": "team", "team": "alpha", "password_env": "AD_ALPHA" },
+    { "login": "beta", "role": "team", "team": "beta", "password_env": "AD_BETA" }
+  ]
+}

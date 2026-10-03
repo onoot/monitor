@@ -1,0 +1,216 @@
+[
+  {
+    "rule_id": "AD-JWT-001",
+    "category": "JWT_VERIFY_MISSING",
+    "title": "JWT decoded without verifying the signature",
+    "severity": "critical",
+    "confidence": "medium",
+    "description": "decode() only base64-parses the payload. Any team can mint an admin token without knowing the signing key.",
+    "exploit": "Craft a token with an elevated claim and replay it.",
+    "breaker": "None.",
+    "remediation": "Call verify() with the algorithm pinned explicitly.",
+    "cwe": [
+      "CWE-347",
+      "CWE-345"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/utils/chekAuth.js",
+      "line": 14,
+      "snippet": "authorization || '').replace(/Bearer\\s?/, ''); if (!token) { return res.status(403).json({ message: 'Нет доступа' }); } try { // текущая логика: без подписи (decode) const decoded = jwt.decode(token); if (!decoded) { return res.status(403).json({ message: 'Нет доступа' }); } let userId = decoded._id; // Обратная совместимость: если _id не ObjectId, считаем, что это",
+      "fingerprint": "931eb4efd409"
+    }
+  },
+  {
+    "rule_id": "AD-JWT-002",
+    "category": "CRYPTOGRAPHY",
+    "title": "Hardcoded JWT signing secret in the repository",
+    "severity": "critical",
+    "confidence": "high",
+    "description": "A literal signing secret is embedded in the code, so it is identical for every deployment and readable by anyone with the source.",
+    "exploit": "Sign arbitrary tokens offline with the leaked secret. Every token forged this way passes verification, including admin claims.",
+    "breaker": "None. Checkers present genuine tokens, so scoring is unaffected while teams mint valid identities for any user.",
+    "remediation": "Load the secret from the environment, rotate it, and reject tokens signed with anything but the current secret.",
+    "cwe": [
+      "CWE-798",
+      "CWE-321"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/Controllers/UserControllers.js",
+      "line": 134,
+      "snippet": "equest = false; try { const authHeader = req.headers.authorization || ''; const rawToken = authHeader.replace(/Bearer\\s?/, ''); if (rawToken) { const decoded = jwt.decode(rawToken, 'secret123'); if (decoded && decoded.isAdmin) { isAdminRequest = true; } } } catch (_) { } const projection = isAdminRequest ? '-passwordHash'",
+      "fingerprint": "69affbf38ad8"
+    }
+  },
+  {
+    "rule_id": "AD-JWT-002",
+    "category": "CRYPTOGRAPHY",
+    "title": "Hardcoded JWT signing secret in the repository",
+    "severity": "critical",
+    "confidence": "high",
+    "description": "A literal signing secret is embedded in the code, so it is identical for every deployment and readable by anyone with the source.",
+    "exploit": "Sign arbitrary tokens offline with the leaked secret. Every token forged this way passes verification, including admin claims.",
+    "breaker": "None. Checkers present genuine tokens, so scoring is unaffected while teams mint valid identities for any user.",
+    "remediation": "Load the secret from the environment, rotate it, and reject tokens signed with anything but the current secret.",
+    "cwe": [
+      "CWE-798",
+      "CWE-321"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/Controllers/UserControllers.js",
+      "line": 162,
+      "snippet": "equest = false; try { const authHeader = req.headers.authorization || ''; const rawToken = authHeader.replace(/Bearer\\s?/, ''); if (rawToken) { const decoded = jwt.verify(rawToken, 'secret123'); if (decoded && decoded.isAdmin) { isAdminRequest = true; } } } catch (_) {} const projection = isAdminRequest ? '-passwordHash' : '-pass",
+      "fingerprint": "fd8fc47610f9"
+    }
+  },
+  {
+    "rule_id": "AD-PRIV-004",
+    "category": "PRIVILEGE_ESCALATION",
+    "title": "Privilege flag copied straight out of an unverified token",
+    "severity": "critical",
+    "confidence": "medium",
+    "description": "An administrative flag is taken from the request's own token payload. Combined with a decode-only token check this is a full account takeover primitive: no secret is needed, only the ability to base64 a claim.",
+    "exploit": "Take any valid token, edit the isAdmin/role claim, re-base64 the payload and replay the request with the forged token.",
+    "breaker": "None. The checker uses tokens minted by the service, so it keeps working while teams escalate freely.",
+    "remediation": "Verify the signature and read privileges from the server-side user record, never from client-supplied token contents.",
+    "cwe": [
+      "CWE-863",
+      "CWE-345"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/utils/chekAuth.js",
+      "line": 30,
+      "snippet": "tatus(401).json({ message: 'Нет доступа' }); } req.userId = user._id.toString(); req.isAdmin = Boolean(user.isAdmin); } else { req.userId = userId; req.isAdmin = Boolean(decoded.isAdmin); } return next(); } catch (err) { return res.status(403).json({ message: 'Нет доступа' }); } };",
+      "fingerprint": "b27e6fbbe4a0"
+    }
+  },
+  {
+    "rule_id": "AD-SQL-001",
+    "category": "SQLI",
+    "title": "SQL statement built by string formatting or concatenation",
+    "severity": "critical",
+    "confidence": "high",
+    "description": "The statement is assembled from runtime values instead of bound parameters, so a team can read or rewrite any row.",
+    "exploit": "Boolean, UNION or time based injection in the interpolated value.",
+    "breaker": "One malformed request from any participant can raise a fatal driver error and the instance stops scoring (IV.5).",
+    "remediation": "Use parameterised queries exclusively; never interpolate.",
+    "cwe": [
+      "CWE-89"
+    ],
+    "rule_sources": [
+      "corpus:altayctf-2019",
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/Controllers/PostConroller.js",
+      "line": 110,
+      "snippet": "или нет прав' }); } res.json({ success: true, }); } catch (err) { console.error(err); return res.status(500).json({ message: 'Не удалось удалить статью', }); } }; export const update = async(req,res)=>{ try { const postId = req.params.id; const result = await PostModel.updateOne({ _id: postId, user: req.userId, },{ title: req.body.title, text: req.body.text, imageURL: req.body.ima",
+      "fingerprint": "9addc144af36"
+    }
+  },
+  {
+    "rule_id": "AD-AUTH-005",
+    "category": "AUTH_BYPASS",
+    "title": "Optional authentication: the permission flag defaults to permissive",
+    "severity": "high",
+    "confidence": "high",
+    "description": "The handler starts with the permissive value and only upgrades to the restrictive one when a valid token happens to be present. A request without any credential therefore proceeds down the privileged path instead of being rejected.",
+    "exploit": "Send the request with no Authorization header. The flag stays at its default and the response is still produced.",
+    "breaker": "Usually none: checkers authenticate properly, so the permissive default only affects teams.",
+    "remediation": "Fail closed: return 401/403 unless the credential validated, and compute the permission once instead of defaulting it.",
+    "cwe": [
+      "CWE-287",
+      "CWE-636"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/Controllers/UserControllers.js",
+      "line": 129,
+      "snippet": "[ { fullName: regex }, { email: regex }, ]; } } // Определяем, является ли запрос от администратора (по токену, если он есть) let isAdminRequest = false; try { const authHeader = req.headers.authorization || ''; const rawToken = authHeader.replace(/Bearer\\s?/, ''); if (rawToken) { const decoded = jwt.decode(rawToken, 'secret123'); if (decoded && decoded.isAdmin) { isAdminRequest = true; } } } catch (_) { } const projection = isAdminRequest ? '-passwordHash' : '-passwordHash -cardNumber'; const u",
+      "fingerprint": "419a6071db56"
+    }
+  },
+  {
+    "rule_id": "AD-AUTH-005",
+    "category": "AUTH_BYPASS",
+    "title": "Optional authentication: the permission flag defaults to permissive",
+    "severity": "high",
+    "confidence": "high",
+    "description": "The handler starts with the permissive value and only upgrades to the restrictive one when a valid token happens to be present. A request without any credential therefore proceeds down the privileged path instead of being rejected.",
+    "exploit": "Send the request with no Authorization header. The flag stays at its default and the response is still produced.",
+    "breaker": "Usually none: checkers authenticate properly, so the permissive default only affects teams.",
+    "remediation": "Fail closed: return 401/403 unless the credential validated, and compute the permission once instead of defaulting it.",
+    "cwe": [
+      "CWE-287",
+      "CWE-636"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/Controllers/UserControllers.js",
+      "line": 157,
+      "snippet": "log(err); res.status(500).json({ message: 'Не удалось получить пользователей', }); } }; export const getById = async (req, res) => { try { const { id } = req.params; let isAdminRequest = false; try { const authHeader = req.headers.authorization || ''; const rawToken = authHeader.replace(/Bearer\\s?/, ''); if (rawToken) { const decoded = jwt.verify(rawToken, 'secret123'); if (decoded && decoded.isAdmin) { isAdminRequest = true; } } } catch (_) {} const projection = isAdminRequest ? '-passwordHash'",
+      "fingerprint": "cfa6c6f01294"
+    }
+  },
+  {
+    "rule_id": "AD-CHK-005",
+    "category": "CHECKER_BREAKING",
+    "title": "Registration-time uniqueness constraint on a per-round value",
+    "severity": "medium",
+    "confidence": "high",
+    "description": "If a checker-visible unique field collides between rounds (fixed login, fixed email, fixed slug) the second round cannot register.",
+    "exploit": "N/A - jury-side.",
+    "breaker": "YES. Round N+1 registration fails outright.",
+    "remediation": "Make the checker's random values part of the uniqueness scope.",
+    "cwe": [
+      "CWE-1023"
+    ],
+    "rule_sources": [
+      "corpus:AltayCTF-2018 checkers"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/models/Users.js",
+      "line": 11,
+      "snippet": "import mongoose from 'mongoose' const UserSchema = new mongoose.Schema({ fullName:{ type: String, required: true, }, email:{ type: String, required: true, unique: true, }, passwordHash:{ type:String, required: true, }, avatarURL:String, cardNumber: { type: String, default: '', }, isAdmin: { type: Boolean, defa",
+      "fingerprint": "34a83d8b842c"
+    }
+  },
+  {
+    "rule_id": "AD-LEAK-002",
+    "category": "INFO_LEAK",
+    "title": "Wildcard CORS on a state-changing or authenticated endpoint",
+    "severity": "medium",
+    "confidence": "high",
+    "description": "Any origin may drive authenticated requests, widening cross-team attack surface.",
+    "exploit": "Host a page that calls the instance with the victim's cookies.",
+    "breaker": "None.",
+    "remediation": "Reflect only trusted origins.",
+    "cwe": [
+      "CWE-942"
+    ],
+    "rule_sources": [
+      "corpus:altayctf-2019"
+    ],
+    "evidence": {
+      "file": "backend/Public/js/index.js",
+      "line": 29,
+      "snippet": ".log('✅ DB super - успешное подключение к MongoDB')) .catch((err) => console.log('❌ DB ne super - ошибка подключения:', err)); const app = express(); // Разрешаем CORS app.use((req, res, next) => { res.header('Access-Control-Allow-Origin', '*'); res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization'); res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH'); if (req.metho",
+      "fingerprint": "ed984a1c0d77"
+    }
+  }
+]

@@ -1,0 +1,17 @@
+# The monitoring stand, in one command.
+#
+# The services themselves are NOT part of this project. Each one runs isolated
+# from its own compose file ("services\...\docker-compose.yml", or the wm
+# copies), and this file only brings up the monitoring container and joins it to
+# the networks the services already created. Start the services first, then
+# `docker compose up -d` from this directory. Bring it down with
+# `docker compose down` -- the services and their networks are left untouched,
+# because this project does not own them.
+#
+# The monitoring container keeps the well-known name ad-monitoring so the deploy
+# scripts and health checks can rely on it.
+
+name: ad-stand
+
+include:
+  - path: services/monitoring/docker-compose.yml

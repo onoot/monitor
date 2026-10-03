@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Главная</title>
+
+  <link href="/static/bootstrap.css" rel="stylesheet">
+  <link href="/static/3-col-portfolio.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+          </button>
+        </div>
+
+      <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav">
+          <li><a href="/">Главная</a></li>
+        {{if .user_id}}
+          <li><a href="/user/logout">Выйти</a></li>
+		  <li class="active"><a href="/dashboard">Посмотреть лотерейный билет</a></li>
+        {{else}}
+
+        {{end}}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+ <div class="container">
+
+    <div class="row">
+
+
+    </div>
+      {{if .ticket_number}}
+          <p><b>Ваш лотерейный билет:</b> {{.ticket_number}}</p>
+      {{end}}
+  </div>
+
+
+</body>
+</html>

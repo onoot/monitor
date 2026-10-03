@@ -1,0 +1,14 @@
+{
+  "enabled": false,
+  "flag_pattern": "",
+  "mask": null,
+  "prefix": "",
+  "envelope": [],
+  "alphabet": "",
+  "checker_policy": "never modify",
+  "unknown_policy": "never modify",
+  "team_policy": "disabled: no private key available",
+  "requires": "flag_format.pattern in the service config and AD_POISON_SECRET",
+  "secret_source": "AD_POISON_SECRET",
+  "error": "AD_POISON_SECRET is not set; refusing to derive the poisoning key from service data. Export a private secret before generating plans."
+}

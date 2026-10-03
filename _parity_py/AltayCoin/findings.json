@@ -1,0 +1,50 @@
+[
+  {
+    "rule_id": "AD-AUTH-002",
+    "category": "AUTH_BYPASS",
+    "title": "Unauthenticated GET table",
+    "severity": "high",
+    "confidence": "low",
+    "description": "The route declaration has no authentication decorator, middleware or session check in its surrounding lines, while the path points at per-user or global data.",
+    "exploit": "Call the endpoint directly without any session or token.",
+    "breaker": "Usually none: checkers keep using authenticated endpoints, so teams read the data freely while scoring continues.",
+    "remediation": "Apply the same auth guard used by the neighbouring routes.",
+    "cwe": [
+      "CWE-306"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/src/users/users.controller.ts",
+      "line": 16,
+      "snippet": "GET table",
+      "fingerprint": "6c4dae6a8725"
+    }
+  },
+  {
+    "rule_id": "AD-CRYPTO-003",
+    "category": "WEAK_CRYPTO",
+    "title": "Deterministic secret derived only from public data",
+    "severity": "high",
+    "confidence": "high",
+    "description": "Invites, slugs, dialog tokens or session keys computed from the login alone are guessable by anyone who knows the victim's username.",
+    "exploit": "Recompute the value for a known username and use it.",
+    "breaker": "A predictable format is a prerequisite for the checker, which scrapes such values out of responses. Changing the format silently breaks the checker; leaking the value to teams does not.",
+    "remediation": "Issue unpredictable server-side random tokens.",
+    "cwe": [
+      "CWE-330",
+      "CWE-640"
+    ],
+    "rule_sources": [
+      "corpus:altayctf-2019",
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "backend/src/users/users.service.ts",
+      "line": 279,
+      "snippet": "or) { } const data = { \"login\": body.login, \"password\": createHash(\"sha256\").update(body.pass).digest(\"hex\"), \"info\": body.userinfo, \"invitecode\": createHash(\"sha256\").update(body.login).digest(\"hex\"), \"inviter\": body.invitecode, \"level\": 1, \"coin\": coin, \"energy\": { \"energy\": 1000, \"energyGeneric\": 5, \"maxEnergy\": 1000 }, \"c",
+      "fingerprint": "2ed4cff46618"
+    }
+  }
+]

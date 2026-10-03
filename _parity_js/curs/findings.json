@@ -1,0 +1,73 @@
+[
+  {
+    "rule_id": "AD-CRYPTO-004",
+    "category": "WEAK_CRYPTO",
+    "title": "Password persisted without a hash",
+    "severity": "critical",
+    "confidence": "high",
+    "description": "`insertUser()` writes a password column with no hashing call in scope. Anyone who reaches the datastore - directly, via SQLi or via traversal - reads every team's plaintext credentials.",
+    "exploit": "Reach the datastore, dump the table, log in as any team.",
+    "breaker": "None for the checker, which uses correct credentials. But combined with any read primitive this is a total compromise of the instance.",
+    "remediation": "Hash with bcrypt/argon2/scrypt and a per-user salt before storing.",
+    "cwe": [
+      "CWE-256",
+      "CWE-312"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "app/routing.go",
+      "line": 77,
+      "snippet": "func insertUser(c *gin.Context) { login := c.PostForm(\"login\") password := c.PostForm(\"password\") var existingUser User err := db.QueryRow(\"SELECT login FROM users WHERE login = ?\", login).Scan(&existingUser.Login) if err == nil { renderMessage(c, \"register.html\", http.StatusConflict, \"error\", fmt.Sprintf(\"Логин '%s' уже существует.\", login), nil) return } else if err != sql.ErrNoRows { renderMessage(c, \"register.html\", http.StatusInternalServerError, \"error\", fmt.Sprintf(\"Ошибка проверки сущест",
+      "fingerprint": "a19e693309f5"
+    }
+  },
+  {
+    "rule_id": "AD-SQL-001",
+    "category": "SQLI",
+    "title": "SQL statement built by string formatting or concatenation",
+    "severity": "critical",
+    "confidence": "high",
+    "description": "The statement is assembled from runtime values instead of bound parameters, so a team can read or rewrite any row.",
+    "exploit": "Boolean, UNION or time based injection in the interpolated value.",
+    "breaker": "One malformed request from any participant can raise a fatal driver error and the instance stops scoring (IV.5).",
+    "remediation": "Use parameterised queries exclusively; never interpolate.",
+    "cwe": [
+      "CWE-89"
+    ],
+    "rule_sources": [
+      "corpus:altayctf-2019",
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "app/routing.go",
+      "line": 125,
+      "snippet": "gister.html\", http.StatusOK, \"success\", \"Пользователь успешно создан\", nil) } func loginUser(c *gin.Context, db *sql.DB) { login := c.PostForm(\"login\") password := c.PostForm(\"password\") var user User query := fmt.Sprintf(\"SELECT id, login, password, role FROM users WHERE login = '%s' AND password = '%s'\", login, password) err := db.QueryRow(query).Scan(&user.Id, &user.Login, &user.Password, &user.Role) if err != nil { if err == sql.ErrNoRow",
+      "fingerprint": "b39dc8788f97"
+    }
+  },
+  {
+    "rule_id": "AD-AUTH-002",
+    "category": "AUTH_BYPASS",
+    "title": "Unauthenticated GET /dashboard",
+    "severity": "high",
+    "confidence": "low",
+    "description": "The route declaration has no authentication decorator, middleware or session check in its surrounding lines, while the path points at per-user or global data.",
+    "exploit": "Call the endpoint directly without any session or token.",
+    "breaker": "Usually none: checkers keep using authenticated endpoints, so teams read the data freely while scoring continues.",
+    "remediation": "Apply the same auth guard used by the neighbouring routes.",
+    "cwe": [
+      "CWE-306"
+    ],
+    "rule_sources": [
+      "local:AltayCoin/Curs/Magiclib/Omnyhub"
+    ],
+    "evidence": {
+      "file": "app/main.go",
+      "line": 38,
+      "snippet": "GET /dashboard",
+      "fingerprint": "f50ecef3604f"
+    }
+  }
+]

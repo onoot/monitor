@@ -1,0 +1,46 @@
+
+services:
+  database:
+   image: couchdb:latest
+   cpus: 1
+   mem_limit: 1024M
+   networks:
+    app-network:
+     aliases:
+      - db
+   volumes:
+    - ./database/data:/opt/couchdb/data
+   restart: always
+   environment:
+    - COUCHDB_USER=admin
+    - COUCHDB_PASSWORD=admin
+
+  react-app:
+   build: ./frontend
+   ports:
+    - "0.0.0.0:3000:3000"
+   restart: always
+   cpus: 1
+   mem_limit: 1024M
+   networks:
+    - app-network
+
+
+  nest-app:
+   build: ./backend
+   ports:
+    - "0.0.0.0:8080:8080"
+   restart: always
+   networks: 
+    - app-network
+   cpus: 1
+   mem_limit: 1024M
+
+
+networks:
+ app-network:
+  name: app-network
+  driver: bridge
+  ipam:
+   config:
+    - subnet: 172.27.0.0/16

@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "service": "curs",
+    "generated_utc": "2026-10-02T06:24:46+00:00",
+    "source_roots": [
+      "C:\\Users\\Home\\Desktop\\Новая папка\\services\\curs"
+    ],
+    "files_scanned": 12,
+    "files_skipped": 190,
+    "request_records": 16,
+    "rules_evaluated": "see @ad/engine rules",
+    "notes": "Go + Gin + MySQL. Local instance only; no checker source available."
+  },
+  "topology": {
+    "checker_ip_pattern": "",
+    "inferred_team_ips": {},
+    "configured_team_networks": [],
+    "configured_checker_networks": [],
+    "checker_lifecycle": [
+      {
+        "phase": "index",
+        "description": "Service availability probe",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "register",
+        "description": "Account / entity creation (flag is planted here or later)",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "auth",
+        "description": "Login with previously stored credentials",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "operate",
+        "description": "Normal functional read/write operations",
+        "expected_actor": "both"
+      },
+      {
+        "phase": "put",
+        "description": "This round's flag written into the service",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "get_old",
+        "description": "Previous round's flag read back",
+        "expected_actor": "checker"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "AD-CRYPTO-004",
+      "category": "WEAK_CRYPTO",
+      "title": "Password persisted without a hash",
+      "severity": "critical",
+      "confidence": "high",
+      "description": "`insertUser()` writes a password column with no hashing call in scope. Anyone who reaches the datastore - directly, via SQLi or via traversal - reads every team's plaintext credentials.",
+      "exploit": "Reach the datastore, dump the table, log in as any team.",
+      "breaker": "None for the checker, which uses correct credentials. But combined with any read primitive this is a total compromise of the instance.",
+      "remediation": "Hash with bcrypt/argon2/scrypt and a per-user salt before storing.",
+      "cwe": [
+        "CWE-256",
+        "CWE-312"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "app/routing.go",
+        "line": 77,
+        "snippet": "func insertUser(c *gin.Context) { login := c.PostForm(\"login\") password := c.PostForm(\"password\") var existingUser User err := db.QueryRow(\"SELECT login FROM users WHERE login = ?\", login).Scan(&existingUser.Login) if err == nil { renderMessage(c, \"register.html\", http.StatusConflict, \"error\", fmt.Sprintf(\"Логин '%s' уже существует.\", login), nil) return } else if err != sql.ErrNoRows { renderMessage(c, \"register.html\", http.StatusInternalServerError, \"error\", fmt.Sprintf(\"Ошибка проверки сущест",
+        "fingerprint": "a19e693309f5"
+      }
+    },
+    {
+      "rule_id": "AD-SQL-001",
+      "category": "SQLI",
+      "title": "SQL statement built by string formatting or concatenation",
+      "severity": "critical",
+      "confidence": "high",
+      "description": "The statement is assembled from runtime values instead of bound parameters, so a team can read or rewrite any row.",
+      "exploit": "Boolean, UNION or time based injection in the interpolated value.",
+      "breaker": "One malformed request from any participant can raise a fatal driver error and the instance stops scoring (IV.5).",
+      "remediation": "Use parameterised queries exclusively; never interpolate.",
+      "cwe": [
+        "CWE-89"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "app/routing.go",
+        "line": 125,
+        "snippet": "gister.html\", http.StatusOK, \"success\", \"Пользователь успешно создан\", nil) } func loginUser(c *gin.Context, db *sql.DB) { login := c.PostForm(\"login\") password := c.PostForm(\"password\") var user User query := fmt.Sprintf(\"SELECT id, login, password, role FROM users WHERE login = '%s' AND password = '%s'\", login, password) err := db.QueryRow(query).Scan(&user.Id, &user.Login, &user.Password, &user.Role) if err != nil { if err == sql.ErrNoRow",
+        "fingerprint": "b39dc8788f97"
+      }
+    },
+    {
+      "rule_id": "AD-AUTH-002",
+      "category": "AUTH_BYPASS",
+      "title": "Unauthenticated GET /dashboard",
+      "severity": "high",
+      "confidence": "low",
+      "description": "The route declaration has no authentication decorator, middleware or session check in its surrounding lines, while the path points at per-user or global data.",
+      "exploit": "Call the endpoint directly without any session or token.",
+      "breaker": "Usually none: checkers keep using authenticated endpoints, so teams read the data freely while scoring continues.",
+      "remediation": "Apply the same auth guard used by the neighbouring routes.",
+      "cwe": [
+        "CWE-306"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "app/main.go",
+        "line": 38,
+        "snippet": "GET /dashboard",
+        "fingerprint": "f50ecef3604f"
+      }
+    }
+  ],
+  "finding_counts": {
+    "critical": 2,
+    "high": 1
+  },
+  "category_counts": {
+    "WEAK_CRYPTO": 1,
+    "SQLI": 1,
+    "AUTH_BYPASS": 1
+  },
+  "routes": [
+    {
+      "path": "/",
+      "method": "GET",
+      "file": "app/main.go",
+      "line": 36,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "/dashboard",
+      "method": "GET",
+      "file": "app/main.go",
+      "line": 38,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "/login",
+      "method": "GET",
+      "file": "app/main.go",
+      "line": 46,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/login",
+      "method": "POST",
+      "file": "app/main.go",
+      "line": 47,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/logout",
+      "method": "GET",
+      "file": "app/main.go",
+      "line": 52,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "/register",
+      "method": "GET",
+      "file": "app/main.go",
+      "line": 44,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "/register",
+      "method": "POST",
+      "file": "app/main.go",
+      "line": 45,
+      "guarded": true,
+      "id_param": false
+    }
+  ],
+  "unguarded_id_routes": [],
+  "runtime": {
+    "actors": {
+      "unknown": {
+        "actor": "unknown",
+        "ips": [
+          "172.23.0.1"
+        ],
+        "request_count": 16,
+        "distinct_routes": 7,
+        "routes": {
+          "GET /dashboard": 4,
+          "GET /user/login": 4,
+          "GET /": 2,
+          "POST /user/register": 2,
+          "POST /user/login": 2,
+          "GET /user/register": 1,
+          "GET /user/logout": 1
+        },
+        "status_counts": {
+          "200": 10,
+          "303": 4,
+          "401": 1,
+          "409": 1
+        },
+        "credential_pairs_seen": [],
+        "flag_reads": 0,
+        "flag_writes": 0
+      }
+    },
+    "route_matrix": [
+      {
+        "route": "GET /",
+        "actors": {
+          "unknown": {
+            "count": 2,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "GET /dashboard",
+        "actors": {
+          "unknown": {
+            "count": 4,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "GET /user/login",
+        "actors": {
+          "unknown": {
+            "count": 4,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "GET /user/logout",
+        "actors": {
+          "unknown": {
+            "count": 1,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "GET /user/register",
+        "actors": {
+          "unknown": {
+            "count": 1,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "POST /user/login",
+        "actors": {
+          "unknown": {
+            "count": 2,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      },
+      {
+        "route": "POST /user/register",
+        "actors": {
+          "unknown": {
+            "count": 2,
+            "flag_reads": 0,
+            "flag_writes": 0,
+            "ips": [
+              "172.23.0.1"
+            ]
+          }
+        }
+      }
+    ],
+    "cross_actor_observations": [],
+    "parser_notes": []
+  },
+  "flag_flow": {
+    "pattern_known": false,
+    "pattern_source": "unconfirmed_heuristic",
+    "mask": null,
+    "prefix": "",
+    "put_points": [],
+    "get_points": [],
+    "storage_hints": [
+      {
+        "kind": "storage",
+        "detail": "db, err := sql.Open(\"mysql\", \"root:secret@tcp(db:3306)/curs\")",
+        "file": "app/db.go",
+        "line": 10
+      }
+    ],
+    "exposure_hints": [],
+    "observed_checker_flag_reads": [],
+    "observed_team_flag_reads": [],
+    "warnings": [
+      "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flagFormat.pattern (xeger syntax) or knownFlags in the service config.",
+      "No flag write path identified in source; confirm the put flow manually.",
+      "No flag read path identified in source; confirm the get flow manually."
+    ]
+  },
+  "poisoning": {
+    "enabled": false,
+    "flag_pattern": "",
+    "mask": null,
+    "prefix": "",
+    "envelope": [],
+    "alphabet": "",
+    "checker_policy": "never modify",
+    "unknown_policy": "never modify",
+    "team_policy": "disabled: no private key available",
+    "requires": "flag_format.pattern in the service config and AD_POISON_SECRET",
+    "secret_source": "AD_POISON_SECRET",
+    "error": "AD_POISON_SECRET is not set; refusing to derive the poisoning key from service data. Export a private secret before generating plans."
+  },
+  "warnings": [
+    "flag_format.pattern is not set: flag put/get cannot be verified and poisoning is disabled.",
+    "No team_networks configured. Runtime IPs will classify as 'unknown' and are never poisoned.",
+    "No checker_networks or checker_ip_pattern configured. Checker traffic cannot be identified; treat all traffic as team traffic for reporting only, never for poisoning.",
+    "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flagFormat.pattern (xeger syntax) or knownFlags in the service config.",
+    "No flag write path identified in source; confirm the put flow manually.",
+    "No flag read path identified in source; confirm the get flow manually."
+  ]
+}

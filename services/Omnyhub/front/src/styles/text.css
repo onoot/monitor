@@ -1,0 +1,46 @@
+.frontext {
+    text-align: center;
+    color: white;
+}
+
+.hrefback {
+    text-decoration: none;
+    color: blue;
+}
+
+.midle {
+    text-align: center;
+    color: blue;
+    font-size: 35px;
+    text-decoration: none;
+    display: block;
+    margin: 30px;
+    letter-spacing: 1px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 400;
+}
+
+.midlefull {
+    text-align: center;
+    color: red;
+    font-size: 100px;
+    text-decoration: none;
+    display: block;
+}
+
+.form {
+    max-width: 300px;
+    margin: auto;
+    padding: 30px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.normaltext{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 15px;
+}
+.reg{
+    margin: 25px;
+    margin-top: 30px;
+}

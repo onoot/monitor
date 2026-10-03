@@ -1,0 +1,61 @@
+services:
+  mongodb:
+    image: mongo:latest
+    mem_limit: 1024M
+    cpus: 1  
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: mydatabase
+    ports:
+      - "0.0.0.0:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - omninet
+    restart: unless-stopped
+
+  backend:
+    build: ./backend/Public/js
+    mem_limit: 1024M
+    cpus: 1  
+    ports:
+      - "0.0.0.0:4444:4444"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/mydatabase?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - omninet
+
+  frontend:
+    build: ./front
+    mem_limit: 512M
+    cpus: 1  
+    ports:
+      - "0.0.0.0:3333:3333"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - omninet
+
+
+volumes:
+  mongodb_data:
+networks:
+  omninet:
+    name: omninet
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

@@ -1,0 +1,117 @@
+{
+  "_comment": "Monitoring service config for the docker stand. The image is shared with the real network; only this file changes.",
+  "_ingress_comment": "The gateway is the team's address: the checker on the organiser's machine dials <team-ip>:<port>, so the occupied service ports bind directly on 0.0.0.0 (redirect_offset 0) instead of the netfilter REDIRECT offset used when services themselves own the port. The port, not the Host header, decides the route here.",
+  "redirect_offset": 0,
+  "ingress_ports_host": "0.0.0.0",
+  "_network_comment": "Addresses on the stand network 10.77.0.0/24, created by the top-level docker-compose.yml. The gateway itself is 10.77.0.254. These are the same addresses as the real network, so a container here and a machine there are classified identically. For a real competition, replace this section with the addresses the organiser gives you and delete this comment: only the addresses change, the roles do not.",
+  "listen": {
+    "host": "0.0.0.0",
+    "port": 9090
+  },
+  "analytics_listen": {
+    "host": "0.0.0.0",
+    "port": 8787
+  },
+  "checker": [
+    {
+      "cidr": "10.77.0.250",
+      "note": "the grader; its traffic lands in data/checker and in the 'Чекер' tab. On the real network this list holds the address the organiser gives you, or stays empty -- an unlisted checker is safe all the same, because only known team subnets are policed"
+    },
+    {
+      "cidr": "10.78.0.250",
+      "note": "the stand's checker container on checker-net 10.78.0.0/24; .1 is the docker host end, so the container takes .250"
+    }
+  ],
+  "admin": [
+    {
+      "cidr": "10.77.0.1",
+      "note": "the operator's machine: the host end of the stand network"
+    },
+    {
+      "cidr": "10.78.0.1",
+      "note": "the operator's machine: the host end of checker-net"
+    },
+    {
+      "cidr": "10.65.9.1",
+      "note": "the operator's machine: the host end of attack-net"
+    },
+    {
+      "cidr": "172.24.0.1",
+      "note": "the operator's machine again: published-port traffic arrives via the curs network"
+    },
+    {
+      "cidr": "172.25.0.1",
+      "note": "operator, via the omnyhub service network"
+    },
+    {
+      "cidr": "172.26.0.1",
+      "note": "operator, via the magiclib service network"
+    },
+    {
+      "cidr": "172.27.0.1",
+      "note": "operator, via the altaycoin service network"
+    },
+    {
+      "cidr": "127.0.0.1/32",
+      "note": "the container's own health check, which arrives over loopback"
+    }
+  ],
+  "teams": [
+    {
+      "cidr": "10.77.0.0/25",
+      "team": "stand"
+    },
+    {
+      "cidr": "10.65.9.0/24",
+      "team": "attacker"
+    }
+  ],
+  "_role_comment": "The ingress records and forwards every request. Only a positively-known participant range is subject to the attack rules, so this file does not need the grader's address at all: a checker on the real network is beyond our control, and being unlisted it is never policed. The checker list above is intentionally empty and exists only for when the organiser does give an address -- it labels that address's traffic in the history. The team range is a single /25 because the stand has one team; a real run lists one range per team.",
+  "routes": {
+    "curs.local": {
+      "service": "curs",
+      "upstream": "curs:8083"
+    },
+    "magiclib.local": {
+      "service": "magiclib",
+      "upstream": "magiclib:1337"
+    },
+    "omnyhub.local": {
+      "service": "Omnyhub",
+      "upstream": "backend:4444"
+    },
+    "omnyhub-web.local": {
+      "service": "Omnyhub",
+      "upstream": "frontend:3333"
+    },
+    "altaycoin-api.local": {
+      "service": "AltayCoin",
+      "upstream": "nest-app:8080"
+    },
+    "altaycoin-web.local": {
+      "service": "AltayCoin",
+      "upstream": "react-app:3000"
+    }
+  },
+  "_routes_comment": "Host -> upstream allowlist, resolved by the docker service name over that service's own network. Service names rather than container names: container names carry the project prefix (ad-stand-curs-1), and a name that is correct only on the stand would break on a real network where the service runs outside compose. The upstream is never taken from the request, so a crafted Host or X-Forwarded-Host cannot make the gateway fetch an arbitrary address.",
+  "accounts": [
+    {
+      "login": "ops",
+      "password_hash": "70baddc224a352fa9c866536b3a2bfaa:b63c3d371be55dcfbb1ee35c0705992d26bb86789de39a42e75889440fca99a3b1f9b2d76458523f30f157bc706d837a9655fa1fbca78ad89b50d7a91760eee3",
+      "role": "admin"
+    },
+    {
+      "login": "alpha",
+      "password_hash": "81cc5bb196ee48f7b6a6e0565988419a:038d3793d4aacb958e3017609cbef642b53c51fc4e184ffa1a2b5bf9987340b496b61b3c18b03613049dd6ecb6a344aba157fbd42e6e961259348abaff5cda73",
+      "role": "team",
+      "team": "alpha"
+    },
+    {
+      "login": "beta",
+      "password_hash": "58e7b3686426c9e9b738549b4d9db1c5:0ab3c439039ffd1a7b2139e25d7a3518a6ef9132b91a26e15982e09b8f710ac279e43daf5ac037b08047b25325134b191585600d22598ad1240e332722c330ba",
+      "role": "team",
+      "team": "beta"
+    }
+  ],
+  "_accounts_comment": "Seed accounts. Passwords are scrypt hashes, written by `js/packages/gateway/bin/account.ts`. On first boot they are copied into the writable store (data/state/accounts.json) and the dashboard's Accounts tab manages them from then on; this list is only the seed. Never write a plaintext password here."
+}

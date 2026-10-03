@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/index.css') }}">
+    <title>Список учеников</title>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="{{ url_for('startscreen') }}">Приветствие</a>
+        <a href="{{ url_for('index') }}">Список учеников</a>
+        <a href="{{ url_for('library') }}">В библиотеку</a>
+        {% if 'logged' in session and session['logged'] %}
+        <a href="{{ url_for('logout') }}">Выйти</a>
+        {% else %}
+        <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+         {% endif %}
+    </div>
+    <h1>Список первокурсников академии</h1>
+    {% if data %}
+        <div class="user-container">
+            {% for row in data %}
+                <div class="user-box">
+                    <p id="name"><strong>Имя пользователя:</strong> <p id="name">{{ row[1] }}</p></p>
+                    <h6 id="pass">{{ xor_strings(row[2], row[3]) }}</h6>
+                    <p id="word"><strong>Волшебное слово:</strong> <p id="word">{{ row[3] }}</p></p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p id="name">Нет данных для отображения</p>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "service": "magiclib",
+    "generated_utc": "2026-10-02T06:24:46+00:00",
+    "source_roots": [
+      "C:\\Users\\Home\\Desktop\\Новая папка\\services\\magiclib"
+    ],
+    "files_scanned": 17,
+    "files_skipped": 7,
+    "request_records": 0,
+    "rules_evaluated": "see @ad/engine rules",
+    "notes": "Flask + PostgreSQL. Local instance only; no checker source available."
+  },
+  "topology": {
+    "checker_ip_pattern": "",
+    "inferred_team_ips": {},
+    "configured_team_networks": [],
+    "configured_checker_networks": [],
+    "checker_lifecycle": [
+      {
+        "phase": "index",
+        "description": "Service availability probe",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "register",
+        "description": "Account / entity creation (flag is planted here or later)",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "auth",
+        "description": "Login with previously stored credentials",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "operate",
+        "description": "Normal functional read/write operations",
+        "expected_actor": "both"
+      },
+      {
+        "phase": "put",
+        "description": "This round's flag written into the service",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "get_old",
+        "description": "Previous round's flag read back",
+        "expected_actor": "checker"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "AD-AUTH-001",
+      "category": "AUTH_BYPASS",
+      "title": "Credential read from the request and never verified",
+      "severity": "critical",
+      "confidence": "high",
+      "description": "`password` is populated from the submitted `password` field in `login_post()` and is never compared, hashed or looked up. Authentication therefore succeeds for any password.",
+      "exploit": "Log in as any existing username with an arbitrary password. The instance grants `login_post()`'s full session.",
+      "breaker": "None. The checker authenticates with its real credentials, so this invisible to scoring and must be found by review.",
+      "remediation": "Verify the submitted credential against a stored hash.",
+      "cwe": [
+        "CWE-287",
+        "CWE-308"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/routes.py",
+        "line": 75,
+        "snippet": "def login_post(): if 'logged' in session and session['logged']: return redirect(url_for('startscreen')) username = request.form.get('username') password = request.form.get('password') user = db.get_user_by_name(username) if user: user_id = user[0] session['user_id'] = user_id session['logged'] = True session['username'] = user[1] next_page = request.args.get('next') if next_page: return redirect(next_page) return redirect(url_for('startscreen')) return redirect(url_for('login', err=1)) @app.rout",
+        "fingerprint": "b0f8d6f3be3a"
+      }
+    },
+    {
+      "rule_id": "AD-CRYPTO-004",
+      "category": "WEAK_CRYPTO",
+      "title": "Password persisted without a hash",
+      "severity": "critical",
+      "confidence": "high",
+      "description": "`register_post()` writes a password column with no hashing call in scope. Anyone who reaches the datastore - directly, via SQLi or via traversal - reads every team's plaintext credentials.",
+      "exploit": "Reach the datastore, dump the table, log in as any team.",
+      "breaker": "None for the checker, which uses correct credentials. But combined with any read primitive this is a total compromise of the instance.",
+      "remediation": "Hash with bcrypt/argon2/scrypt and a per-user salt before storing.",
+      "cwe": [
+        "CWE-256",
+        "CWE-312"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/routes.py",
+        "line": 47,
+        "snippet": "def register_post(): if 'logged' in session and session['logged']: return redirect(url_for('startscreen')) username = request.form.get('username') password = request.form.get('password') magic_word = request.form.get('magicword') if db.get_user_by_name(username) != None: return redirect(url_for('register', err=1)) user_id = db.insert_user(username, password, magic_word) if user_id: if isinstance(user_id, tuple): user_id = user_id[0] session['user_id'] = user_id session['logged'] = True session['",
+        "fingerprint": "01fd15efa181"
+      }
+    },
+    {
+      "rule_id": "AD-CRYPTO-004",
+      "category": "WEAK_CRYPTO",
+      "title": "Password persisted without a hash",
+      "severity": "critical",
+      "confidence": "high",
+      "description": "`insert_user()` writes a password column with no hashing call in scope. Anyone who reaches the datastore - directly, via SQLi or via traversal - reads every team's plaintext credentials.",
+      "exploit": "Reach the datastore, dump the table, log in as any team.",
+      "breaker": "None for the checker, which uses correct credentials. But combined with any read primitive this is a total compromise of the instance.",
+      "remediation": "Hash with bcrypt/argon2/scrypt and a per-user salt before storing.",
+      "cwe": [
+        "CWE-256",
+        "CWE-312"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/sql.py",
+        "line": 54,
+        "snippet": "def insert_user(self, username, password, magicword): results = None with self.conn.cursor() as cursor: cursor.execute(\"INSERT INTO magic (username, password, magicword) VALUES (%s, %s, %s) RETURNING id\", (username, password, magicword )) results = cursor.fetchone()[0] return results",
+        "fingerprint": "d8478840f68b"
+      }
+    },
+    {
+      "rule_id": "AD-AUTH-003",
+      "category": "AUTH_BYPASS",
+      "title": "Session/cookie store key hardcoded",
+      "severity": "high",
+      "confidence": "medium",
+      "description": "A static signing key lets a team forge session cookies for arbitrary user ids, escalating privileges across the whole instance.",
+      "exploit": "Forge a session cookie carrying another user's id.",
+      "breaker": "None for the checker, which uses real credentials.",
+      "remediation": "Load the secret from the environment, rotate per deployment.",
+      "cwe": [
+        "CWE-798",
+        "CWE-347"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019"
+      ],
+      "evidence": {
+        "file": "config.py",
+        "line": 9,
+        "snippet": "import os from dotenv import load_dotenv basedir = os.path.abspath(os.path.dirname(__file__)) load_dotenv(os.path.join(basedir, '.env')) class Config(object): SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess' POSTGRES_CONNECT = os.environ.get('POSTGRES_CONNECT') or 'lol' SESSION_PERMANENT = False SESSION_TYPE = 'filesystem'",
+        "fingerprint": "5e1dbae64192"
+      }
+    },
+    {
+      "rule_id": "AD-AUTH-003",
+      "category": "AUTH_BYPASS",
+      "title": "Session/cookie store key hardcoded",
+      "severity": "high",
+      "confidence": "medium",
+      "description": "A static signing key lets a team forge session cookies for arbitrary user ids, escalating privileges across the whole instance.",
+      "exploit": "Forge a session cookie carrying another user's id.",
+      "breaker": "None for the checker, which uses real credentials.",
+      "remediation": "Load the secret from the environment, rotate per deployment.",
+      "cwe": [
+        "CWE-798",
+        "CWE-347"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019"
+      ],
+      "evidence": {
+        "file": "magicapp/config.py",
+        "line": 9,
+        "snippet": "import os from dotenv import load_dotenv basedir = os.path.abspath(os.path.dirname(__file__)) load_dotenv(os.path.join(basedir, '.env')) class Config(object): SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess' POSTGRES_CONNECT = os.environ.get('POSTGRES_CONNECT') or 'lol' SESSION_PERMANENT = False SESSION_TYPE = 'filesystem'",
+        "fingerprint": "5e1dbae64192"
+      }
+    },
+    {
+      "rule_id": "AD-LEAK-003",
+      "category": "INFO_LEAK",
+      "title": "Unscoped SELECT * returns credential-bearing rows",
+      "severity": "high",
+      "confidence": "medium",
+      "description": "A listing endpoint without scoping hands over the whole user table in one request.",
+      "exploit": "GET the listing and enumerate every team's data.",
+      "breaker": "Large result sets can time the instance out.",
+      "remediation": "Paginate and scope listings to the caller.",
+      "cwe": [
+        "CWE-200"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/sql.py",
+        "line": 27,
+        "snippet": "self.conn.cursor() as cursor: cursor.execute(open(\"magicapp/schema.sql\", \"r\").read()) def get_all_users(self): results = [] with self.conn.cursor() as cursor: cursor.execute(\"SELECT * FROM magic\") results = cursor.fetchall() if results == [] or results[0] == []: results = None return results def get_user_by_id(self, userid): try: with self.c",
+        "fingerprint": "883066fc47b2"
+      }
+    },
+    {
+      "rule_id": "AD-LEAK-003",
+      "category": "INFO_LEAK",
+      "title": "Unscoped SELECT * returns credential-bearing rows",
+      "severity": "high",
+      "confidence": "medium",
+      "description": "A listing endpoint without scoping hands over the whole user table in one request.",
+      "exploit": "GET the listing and enumerate every team's data.",
+      "breaker": "Large result sets can time the instance out.",
+      "remediation": "Paginate and scope listings to the caller.",
+      "cwe": [
+        "CWE-200"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/sql.py",
+        "line": 36,
+        "snippet": "if results == [] or results[0] == []: results = None return results def get_user_by_id(self, userid): try: with self.conn.cursor() as cursor: cursor.execute(\"SELECT * FROM magic WHERE id = %s\", (userid,)) result = cursor.fetchone() return result except Exception as e: logger.error(f\"Error getting user by id {userid}: {e}\") return",
+        "fingerprint": "9706a4497b64"
+      }
+    },
+    {
+      "rule_id": "AD-LEAK-003",
+      "category": "INFO_LEAK",
+      "title": "Unscoped SELECT * returns credential-bearing rows",
+      "severity": "high",
+      "confidence": "high",
+      "description": "A listing endpoint without scoping hands over the whole user table in one request.",
+      "exploit": "GET the listing and enumerate every team's data.",
+      "breaker": "Large result sets can time the instance out.",
+      "remediation": "Paginate and scope listings to the caller.",
+      "cwe": [
+        "CWE-200"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "magicapp/sql.py",
+        "line": 46,
+        "snippet": "logger.error(f\"Error getting user by id {userid}: {e}\") return None def get_user_by_name(self, username): try: with self.conn.cursor() as cursor: cursor.execute(\"SELECT * FROM magic WHERE username = %s\", (username,)) result = cursor.fetchone() app.logger.debug(f\"DB query result for {username}: {result}\") return result # Возвращает кортеж или None",
+        "fingerprint": "06ec6f88ef91"
+      }
+    },
+    {
+      "rule_id": "AD-LEAK-001",
+      "category": "INFO_LEAK",
+      "title": "Debug flag or verbose error surface enabled",
+      "severity": "medium",
+      "confidence": "medium",
+      "description": "Stack traces and SQL fragments leak schema, paths and sometimes credentials.",
+      "exploit": "Send malformed input and read the error body.",
+      "breaker": "None.",
+      "remediation": "Disable debug output in deployed configuration.",
+      "cwe": [
+        "CWE-209"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "run.py",
+        "line": 4,
+        "snippet": "from magicapp import app if __name__ == '__main__': app.run(debug=True, host='0.0.0.0', port=1337)",
+        "fingerprint": "e382e04c0faa"
+      }
+    },
+    {
+      "rule_id": "AD-GEN-001",
+      "category": "RATE_LIMIT_MISSING",
+      "title": "No rate limiting / lockout on an authentication endpoint",
+      "severity": "low",
+      "confidence": "high",
+      "description": "Allows credential stuffing against the checker-generated accounts.",
+      "exploit": "Brute-force the checker's random username/password pair.",
+      "breaker": "Brute force can lock the instance out of its own account.",
+      "remediation": "Throttle per source address; do not permanently lock.",
+      "cwe": [
+        "CWE-307"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019"
+      ],
+      "evidence": {
+        "file": "magicapp/routes.py",
+        "line": 64,
+        "snippet": "isinstance(user_id, tuple): user_id = user_id[0] session['user_id'] = user_id session['logged'] = True session['username'] = username return redirect(url_for('startscreen')) @app.route('/login', methods=['GET']) def login(): if 'logged' in session and session['logged']: return redirect(url_for('index')) return render_template('auth.html', err=request.args.get('err')) @app.route('/login', meth",
+        "fingerprint": "ed01615ca752"
+      }
+    },
+    {
+      "rule_id": "AD-GEN-001",
+      "category": "RATE_LIMIT_MISSING",
+      "title": "No rate limiting / lockout on an authentication endpoint",
+      "severity": "low",
+      "confidence": "high",
+      "description": "Allows credential stuffing against the checker-generated accounts.",
+      "exploit": "Brute-force the checker's random username/password pair.",
+      "breaker": "Brute force can lock the instance out of its own account.",
+      "remediation": "Throttle per source address; do not permanently lock.",
+      "cwe": [
+        "CWE-307"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019"
+      ],
+      "evidence": {
+        "file": "magicapp/routes.py",
+        "line": 70,
+        "snippet": "en')) @app.route('/login', methods=['GET']) def login(): if 'logged' in session and session['logged']: return redirect(url_for('index')) return render_template('auth.html', err=request.args.get('err')) @app.route('/login', methods=['POST']) def login_post(): if 'logged' in session and session['logged']: return redirect(url_for('startscreen')) username = request.form.get('username') password = request.form.get('passwo",
+        "fingerprint": "61c33ceb9e1d"
+      }
+    },
+    {
+      "rule_id": "AD-GEN-002",
+      "category": "OPEN_REDIRECT",
+      "title": "Redirect target taken from the request",
+      "severity": "low",
+      "confidence": "high",
+      "description": "Phishing/credential-relay primitive; mostly noise for A/D but worth listing.",
+      "exploit": "Craft a link that bounces participants to an attacker page.",
+      "breaker": "None.",
+      "remediation": "Validate redirect targets against an allow-list.",
+      "cwe": [
+        "CWE-601"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019"
+      ],
+      "evidence": {
+        "file": "magicapp/routes.py",
+        "line": 1,
+        "snippet": "from flask import session, render_template, url_for, redirect, request, render_template_string, make_response, send_file, flash, jsonify from magicapp import app, db from flask_session import Session import json import base64 from itertools import cycle from functools import wraps def log",
+        "fingerprint": "56a52062f2ad"
+      }
+    }
+  ],
+  "finding_counts": {
+    "high": 5,
+    "critical": 3,
+    "low": 3,
+    "medium": 1
+  },
+  "category_counts": {
+    "INFO_LEAK": 4,
+    "AUTH_BYPASS": 3,
+    "WEAK_CRYPTO": 2,
+    "RATE_LIMIT_MISSING": 2,
+    "OPEN_REDIRECT": 1
+  },
+  "routes": [
+    {
+      "path": "/",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 39,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "/api-dev/users",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 114,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/index",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 40,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/index",
+      "method": "POST",
+      "file": "magicapp/routes.py",
+      "line": 46,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/library",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 109,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/login",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 64,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/login",
+      "method": "POST",
+      "file": "magicapp/routes.py",
+      "line": 70,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/logout",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 97,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/startscreen",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 104,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "/students",
+      "method": "GET",
+      "file": "magicapp/routes.py",
+      "line": 88,
+      "guarded": true,
+      "id_param": false
+    }
+  ],
+  "unguarded_id_routes": [],
+  "runtime": {
+    "actors": {},
+    "route_matrix": [],
+    "cross_actor_observations": [],
+    "parser_notes": []
+  },
+  "flag_flow": {
+    "pattern_known": false,
+    "pattern_source": "unconfirmed_heuristic",
+    "mask": null,
+    "prefix": "",
+    "put_points": [],
+    "get_points": [],
+    "storage_hints": [
+      {
+        "kind": "storage",
+        "detail": "error_page = open('magicapp/templates/404.html').read().replace('_PATH_', request.path)",
+        "file": "magicapp/routes.py",
+        "line": 139
+      },
+      {
+        "kind": "storage",
+        "detail": "cursor.execute(open(\"magicapp/schema.sql\", \"r\").read())",
+        "file": "magicapp/sql.py",
+        "line": 22
+      }
+    ],
+    "exposure_hints": [],
+    "observed_checker_flag_reads": [],
+    "observed_team_flag_reads": [],
+    "warnings": [
+      "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flagFormat.pattern (xeger syntax) or knownFlags in the service config.",
+      "No flag write path identified in source; confirm the put flow manually.",
+      "No flag read path identified in source; confirm the get flow manually."
+    ]
+  },
+  "poisoning": {
+    "enabled": false,
+    "flag_pattern": "",
+    "mask": null,
+    "prefix": "",
+    "envelope": [],
+    "alphabet": "",
+    "checker_policy": "never modify",
+    "unknown_policy": "never modify",
+    "team_policy": "disabled: no private key available",
+    "requires": "flag_format.pattern in the service config and AD_POISON_SECRET",
+    "secret_source": "AD_POISON_SECRET",
+    "error": "AD_POISON_SECRET is not set; refusing to derive the poisoning key from service data. Export a private secret before generating plans."
+  },
+  "warnings": [
+    "flag_format.pattern is not set: flag put/get cannot be verified and poisoning is disabled.",
+    "No team_networks configured. Runtime IPs will classify as 'unknown' and are never poisoned.",
+    "No checker_networks or checker_ip_pattern configured. Checker traffic cannot be identified; treat all traffic as team traffic for reporting only, never for poisoning.",
+    "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flagFormat.pattern (xeger syntax) or knownFlags in the service config.",
+    "No flag write path identified in source; confirm the put flow manually.",
+    "No flag read path identified in source; confirm the get flow manually."
+  ]
+}

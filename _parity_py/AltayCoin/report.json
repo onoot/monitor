@@ -1,0 +1,254 @@
+{
+  "meta": {
+    "schema_version": "1.0",
+    "service": "AltayCoin",
+    "generated_utc": "2026-10-02T06:24:44+00:00",
+    "source_roots": [
+      "C:\\Users\\Home\\Desktop\\Новая папка\\services\\AltayCoin"
+    ],
+    "files_scanned": 33,
+    "files_skipped": 91,
+    "request_records": 0,
+    "rules_evaluated": "see ad.rules.RULES",
+    "notes": "NestJS + PostgreSQL. Local instance only; no checker source available."
+  },
+  "topology": {
+    "checker_ip_pattern": "",
+    "inferred_team_ips": {},
+    "configured_team_networks": [],
+    "configured_checker_networks": [],
+    "checker_lifecycle": [
+      {
+        "phase": "index",
+        "description": "Service availability probe",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "register",
+        "description": "Account / entity creation (flag is planted here or later)",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "auth",
+        "description": "Login with previously stored credentials",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "operate",
+        "description": "Normal functional read/write operations",
+        "expected_actor": "both"
+      },
+      {
+        "phase": "put",
+        "description": "This round's flag written into the service",
+        "expected_actor": "checker"
+      },
+      {
+        "phase": "get_old",
+        "description": "Previous round's flag read back",
+        "expected_actor": "checker"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule_id": "AD-AUTH-002",
+      "category": "AUTH_BYPASS",
+      "title": "Unauthenticated GET table",
+      "severity": "high",
+      "confidence": "low",
+      "description": "The route declaration has no authentication decorator, middleware or session check in its surrounding lines, while the path points at per-user or global data.",
+      "exploit": "Call the endpoint directly without any session or token.",
+      "breaker": "Usually none: checkers keep using authenticated endpoints, so teams read the data freely while scoring continues.",
+      "remediation": "Apply the same auth guard used by the neighbouring routes.",
+      "cwe": [
+        "CWE-306"
+      ],
+      "rule_sources": [
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "backend/src/users/users.controller.ts",
+        "line": 16,
+        "snippet": "GET table",
+        "fingerprint": "6c4dae6a8725"
+      }
+    },
+    {
+      "rule_id": "AD-CRYPTO-003",
+      "category": "WEAK_CRYPTO",
+      "title": "Deterministic secret derived only from public data",
+      "severity": "high",
+      "confidence": "high",
+      "description": "Invites, slugs, dialog tokens or session keys computed from the login alone are guessable by anyone who knows the victim's username.",
+      "exploit": "Recompute the value for a known username and use it.",
+      "breaker": "A predictable format is a prerequisite for the checker, which scrapes such values out of responses. Changing the format silently breaks the checker; leaking the value to teams does not.",
+      "remediation": "Issue unpredictable server-side random tokens.",
+      "cwe": [
+        "CWE-330",
+        "CWE-640"
+      ],
+      "rule_sources": [
+        "corpus:altayctf-2019",
+        "local:AltayCoin/Curs/Magiclib/Omnyhub"
+      ],
+      "evidence": {
+        "file": "backend/src/users/users.service.ts",
+        "line": 279,
+        "snippet": "or) { } const data = { \"login\": body.login, \"password\": createHash(\"sha256\").update(body.pass).digest(\"hex\"), \"info\": body.userinfo, \"invitecode\": createHash(\"sha256\").update(body.login).digest(\"hex\"), \"inviter\": body.invitecode, \"level\": 1, \"coin\": coin, \"energy\": { \"energy\": 1000, \"energyGeneric\": 5, \"maxEnergy\": 1000 }, \"c",
+        "fingerprint": "2ed4cff46618"
+      }
+    }
+  ],
+  "finding_counts": {
+    "high": 2
+  },
+  "category_counts": {
+    "AUTH_BYPASS": 1,
+    "WEAK_CRYPTO": 1
+  },
+  "routes": [
+    {
+      "path": "allusers",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 44,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "autch",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 60,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "check-token",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 10,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "earn",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 27,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "info",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 21,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "info/:id",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 33,
+      "guarded": true,
+      "id_param": true
+    },
+    {
+      "path": "inviter",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 49,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "reg",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 65,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "role",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 69,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "table",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 16,
+      "guarded": false,
+      "id_param": false
+    },
+    {
+      "path": "upgrade/:card",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 55,
+      "guarded": true,
+      "id_param": false
+    },
+    {
+      "path": "upgrades",
+      "method": "GET",
+      "file": "backend/src/users/users.controller.ts",
+      "line": 39,
+      "guarded": true,
+      "id_param": false
+    }
+  ],
+  "unguarded_id_routes": [],
+  "runtime": {
+    "actors": {},
+    "route_matrix": [],
+    "cross_actor_observations": [],
+    "parser_notes": []
+  },
+  "flag_flow": {
+    "pattern_known": false,
+    "pattern_source": "unconfirmed_heuristic",
+    "mask": null,
+    "prefix": "",
+    "put_points": [],
+    "get_points": [],
+    "storage_hints": [],
+    "exposure_hints": [],
+    "observed_checker_flag_reads": [],
+    "observed_team_flag_reads": [],
+    "warnings": [
+      "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flag_format.pattern (xeger syntax) or known_flags in the service config.",
+      "No flag write path identified in source; confirm the put flow manually.",
+      "No flag read path identified in source; confirm the get flow manually."
+    ]
+  },
+  "poisoning": {
+    "enabled": false,
+    "flag_pattern": "",
+    "mask": null,
+    "prefix": "",
+    "envelope": [],
+    "alphabet": "",
+    "checker_policy": "never modify",
+    "unknown_policy": "never modify",
+    "team_policy": "disabled: no private key available",
+    "requires": "flag_format.pattern in the service config and AD_POISON_SECRET",
+    "secret_source": "AD_POISON_SECRET",
+    "error": "AD_POISON_SECRET is not set; refusing to derive the poisoning key from service data. Export a private secret before generating plans."
+  },
+  "warnings": [
+    "flag_format.pattern is not set: flag put/get cannot be verified and poisoning is disabled.",
+    "No team_networks configured. Runtime IPs will classify as 'unknown' and are never poisoned.",
+    "No checker_networks or checker_ip_pattern configured. Checker traffic cannot be identified; treat all traffic as team traffic for reporting only, never for poisoning.",
+    "No flag pattern configured. Flag put/get verification is unavailable and poisoning stays disabled. Set flag_format.pattern (xeger syntax) or known_flags in the service config.",
+    "No flag write path identified in source; confirm the put flow manually.",
+    "No flag read path identified in source; confirm the get flow manually."
+  ]
+}

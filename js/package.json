@@ -1,0 +1,26 @@
+{
+  "name": "ad-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/engine",
+    "packages/server",
+    "packages/gateway",
+    "packages/web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @ad/engine && npm run build -w @ad/gateway && npm run build -w @ad/server && npm run build -w @ad/web",
+    "typecheck": "npm run typecheck -w @ad/engine && npm run typecheck -w @ad/gateway",
+    "test": "npm run test -w @ad/engine && npm run test -w @ad/gateway && npm run test -w @ad/server",
+    "dev": "npm run dev -w @ad/server",
+    "dev:gateway": "npm run dev -w @ad/gateway",
+    "dev:web": "npm run dev -w @ad/web",
+    "scan": "node packages/engine/bin/ad.js scan",
+    "parity": "tsx packages/engine/test-scratch/parity.ts",
+    "scan:all": "node packages/engine/bin/ad.js all --config ../configs"
+  }
+}

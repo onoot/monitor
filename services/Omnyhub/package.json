@@ -1,0 +1,23 @@
+{
+  "name": "omnyhub-backend",
+  "version": "1.0.0",
+  "description": "Backend for Omnyhub application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/Public/js/index.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs mongodb"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

@@ -1,0 +1,32 @@
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/*.tsbuildinfo
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/venv/
+**/*.egg-info/
+**/db/
+**/db.*/
+**/*.ibd
+**/*.ibdata*
+**/*.frm
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+runtime-logs/
+services/monitoring/data/
+**/database/data/
+/services */
+/checkers */
+reports/
+**/.env
+**/*.env
+*.pem
+*.key
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
