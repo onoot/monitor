@@ -113,5 +113,5 @@
       "team": "beta"
     }
   ],
-  "_accounts_comment": "Seed accounts. Passwords are scrypt hashes, written by `js/packages/gateway/bin/account.ts`. On first boot they are copied into the writable store (data/state/accounts.json) and the dashboard's Accounts tab manages them from then on; this list is only the seed. Never write a plaintext password here."
+  "_accounts_comment": "Passwords are scrypt hashes, written by `js/packages/gateway/bin/account.ts`. The same hashes are used as in the host config so one set of credentials works in both; change them with that script, never by hand."
 }

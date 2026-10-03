@@ -1,16 +1,14 @@
 # The monitoring stand, in one command.
 #
-# This is the only file the operator has to start. It brings up two things:
+# This is the only file the operator has to start. It brings up three things:
 #
 #   monitoring  the gateway and its dashboard; the operator's whole surface.
+#   checker     a container on checker-net (10.78.0.0/24) that runs the real
+#               AltayCTF checkers through tools/run_checkers.py against the
+#               gateway, so its flags and traffic show up in the dashboard.
 #   attacker    a container on attack-net (10.65.9.0/24) whose address is inside
 #               a team range, so the attack rules police it -- the negative test
 #               that the same traffic from the checker is let through.
-#
-# The checker is deliberately NOT part of this file. It is an external grader
-# carried in separately and attached to `checker-net` (10.78.0.0/24), so a
-# rebuild or restart of the monitoring stand never disturbs a running game. The
-# network stays declared below for exactly that attach.
 #
 # The watched services are NOT defined here and are not started at boot. The
 # dashboard scans the services folder, shows one card per project, and its launch
@@ -37,9 +35,9 @@ services:
     pids_limit: 256
     mem_limit: 512M
     cpus: 1
-    # The gateway has to stay up even when it is under load, and the operator's
-    # dashboard depends on it, so it gets a health check and a restart rather
-    # than being left to fail silently.
+    # The gateway has to stay up even when it is under load, and the checker
+    # depends on it, so it gets a health check and a restart rather than being
+    # left to fail silently.
     stop_grace_period: 10s
     environment:
       # Limits the cost of a flood. Overridable per environment.
@@ -105,6 +103,26 @@ services:
       retries: 3
       start_period: 10s
 
+  checker:
+    build:
+      context: ../..
+      dockerfile: services/monitoring/checker/Dockerfile
+    image: ad-checker:local
+    container_name: ad-checker
+    restart: unless-stopped
+    depends_on:
+      monitoring:
+        condition: service_healthy
+    environment:
+      # The gateway on checker-net. The checker's own address is 10.78.0.250, so
+      # it is classified as the grader and never policed.
+      AD_CHECKER_HOST: ${AD_CHECKER_HOST:-10.78.0.254}
+      AD_CHECKER_ROUNDS: ${AD_CHECKER_ROUNDS:-2}
+      AD_CHECKER_INTERVAL: ${AD_CHECKER_INTERVAL:-60}
+    networks:
+      checker-net:
+        ipv4_address: 10.78.0.250
+
   attacker:
     image: curlimages/curl:8.11.1
     container_name: ad-attacker
@@ -134,9 +152,8 @@ networks:
           # own address: docker reserves the gateway and refuses to hand it out.
           gateway: 10.77.0.1
 
-  # The grader network. The external checker attaches here as 10.78.0.250; .1 is
-  # the docker host end, which the config lists as the operator. Kept declared
-  # even though no service here uses it, so the checker has a network to join.
+  # The checker's own network. The container takes .250; .1 is the docker host
+  # end, which the config lists as the operator.
   checker-net:
     name: ad-checker-net
     driver: bridge
